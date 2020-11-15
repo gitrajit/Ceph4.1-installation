@@ -1,0 +1,142 @@
+- name: "Checking Number of file system PV's"
+  shell: pvdisplay |grep "PV Name" |wc -l
+  register: pv_count
+- name: "Fail if Number of PV is not as per requirement"
+  fail:
+    msg: "Number of PV is {{ pv_count.stdout }}, Not as per requirement. Hence, Aborting."
+  when: pv_count.stdout|int != pvcount|int
+  ignore_errors: yes
+
+
+- block:
+    - name: Checking the file /etc/resolv.conf is exists or not
+      stat:
+        path: /etc/resolv.conf
+      register: stat_result
+
+    - name: Creating the file /etc/resolv.conf
+      template:
+        src: resolv_conf.j2
+        dest: /etc/resolv.conf
+      when: not stat_result.stat.exists
+
+
+- name: "Checking NTP/Chrony Time synchronized"
+  shell: timedatectl | grep synchronized | awk -F':' '{print$2}' | sed 's/ //'
+  register: timedatectl_output
+  
+- block:
+    - name: "Restarting NPT/Chrony as time is not sync"
+      service:
+        service: chronyd
+        state: restarted
+
+    - name: "Enabling NTP as it was not enable"
+      service:
+        name: chronyd
+        enabled: yes
+
+    - name: "Checking NTP/Chrony Time synchronized"
+      shell: timedatectl | grep synchronized | awk -F':' '{print$2}' | sed 's/ //'
+      register: timedatectl_output1
+   
+    - fail:
+        msg: Time is not synchronize after restart of NTP/Chrony. Please check.
+      when: timedatectl_output1 != 'yes'
+
+  when: timedatectl_output.stdout != 'yes'
+
+#- name: "Building /etc/hosts file for all the hosts"
+#  lineinfile:
+#    dest: /tmp/hosts
+    #dest: /etc/hosts
+#    regexp: '.*{{ item }}$'
+#    line: "{{ hostvars[item].ansible_default_ipv4.address }} {{item}}"
+#    state: present
+#  when: hostvars[item].ansible_default_ipv4.address is defined
+#  with_items: "{{ groups.all }}"
+
+
+#code for podman
+- name: "Checking podman is install or not"
+  shell: rpm -q podman | awk -F'-' '{print$1}'
+  register: podman_check
+
+- name: "installing podman"
+  block:
+    - name: "Installing podman latest version"
+      package:
+        name: podman
+        state: latest
+    - name: Adding insecure entry in container registry file
+      template:
+        src: registries_conf.j2
+        dest: /etc/containers/registries.conf
+  when: podman_check.stdout != 'podman'
+
+
+
+
+#code for docker
+#- name: "Checking docker is install or not"
+#  shell: rpm -q docker | awk -F'-' '{print$1}'
+#  register: docker_check
+#
+#- name: "fail if docker is not install"
+#  block:
+#    - name: "Installing docker latest version"
+#      package:
+#        name: docker
+#        state: latest
+#    - name: "Updating docker daemon.json file"
+#      copy:
+#        src: daemon.json
+#        dest: /etc/docker/daemon.json
+#
+#    - name: "Restarting docker service"
+#      systemd:
+#        name: docker
+#        state: started
+#  when: docker_check.stdout != 'docker'
+#
+
+- name: "Checking firewal status"
+  shell: systemctl status firewalld | grep -i "active" | awk '{print$2}'
+  register: firewal_check
+
+- name: "Starting firewall"
+  systemd:
+    name: firewalld
+    state: started 
+  when: firewal_check.stdout != 'active'
+
+#- name: "Checking DNS name and nslookup"
+#  block:
+#  - name: "Ping to DNS server"
+#    shell: ping -c1 $(cat /etc/resolv.conf |grep -i name |cut -d " " -f2) > /dev/null; echo $?
+#    register: dns_check
+#
+#  - name: "fail if DNS not pingable"
+#    fail:
+#      msg: "DNS server is not pingable. Hence, Aborting."
+#    when: dns_check.stdout|int != 0
+#
+#  - name: "Nslookup"
+#    shell: nslookup $(hostname) > /dev/null; echo $?
+#    register: nslookup_check
+#
+#  - name: "fail if nslookup could not find the server"
+#    fail:
+#      msg: "nslookup cant find the server. Hence, Aborting."
+#    when: nslookup_check.stdout|int != 0
+#  ignore_errors: yes
+#
+#- name: "Pinging to the Gateway IP"
+#  shell: ping -c 1 {{ gatewayip }} > /dev/null; echo $?
+#  register: gateway_check
+#
+#- name: "fail if gateway is not pingable"
+#  fail:
+#    msg: "Not able to ping to the gateway {{ gatewayip }}. Hence , Aborting."
+#  when: gateway_check.stdout|int != 0
+#

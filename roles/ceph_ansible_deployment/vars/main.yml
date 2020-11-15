@@ -1,0 +1,5 @@
+---
+# vars file for Ansible_preparation
+ansibleversion: "2.9"
+pythonversion: '2.7.5'
+cephansibleversion: '4.0.0'

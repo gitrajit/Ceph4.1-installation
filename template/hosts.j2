@@ -1,0 +1,29 @@
+#localhost ansible_connection=local
+[ansible-ceph]
+{% for host in ansible %}
+{{ host }}
+{% endfor %}
+
+[mons]
+{% for host in mons %}
+{{ host }}
+{% endfor %}
+
+[osds]
+{% for host in osds %}
+{{ host }}
+{% endfor %}
+
+[mgrs]
+{% for host in grafana %}
+{{ host }}
+{% endfor %}
+
+[grafana-server]
+{% for host in grafana %}
+{{ host }}
+{% endfor %}
+
+[all:vars]
+ansible_user = root
+ansible_password = "{{ ceph_pwd }}" 

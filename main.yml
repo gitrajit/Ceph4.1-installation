@@ -1,0 +1,83 @@
+# Cpeh Installation start
+- name: "Generating yaml and ceph host file"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - shell: cat ./template/ceph_input.json
+      register: out
+
+    - name: "Converting json to yml file"
+      copy:
+        dest: "./data/var.yml"
+        content: "{{ out.stdout|from_json|to_nice_yaml }}"
+    - include_vars: ./data/var.yml
+
+    - name: "Creating ansible hosts file for ceph nodes"
+      template:
+        src: "./template/hosts.j2"
+        dest: "./cephinventory/hosts"
+
+    - name: "Refresh inventory to ensure new instances exist in inventory"
+      meta: refresh_inventory
+
+- name: "Generate /etc/hosts file for all the nodes"
+  hosts:
+    - osds
+    - mons
+    - mgrs
+    - grafana-server
+    - ansible-ceph
+  gather_facts: true
+  #remote_user: root
+  vars:
+      ansible_user: root
+      ansible_ssh_pass: '{{ ceph_pwd }}'
+  tasks:
+    - name: "Updating /etc/hosts file"
+      lineinfile:
+        dest: /etc/hosts
+        regexp: '.*{{ item }}$'
+        line: "{{ hostvars[item].ansible_default_ipv4.address }} {{item}}"
+        #line: "{{ hostvars[item].ansible_host }} {{item}} {{item.split('.')[0]}}"
+        state: present
+        create: yes
+      when: hostvars[item].ansible_default_ipv4.address is defined
+      with_items: "{{ groups.all }}"
+
+- name: "Pre-Validation for all the ceph nodes"
+  hosts:
+    - osds
+    - mons
+    #- mgrs
+    #- grafana-server
+  gather_facts: true
+  remote_user: root
+  vars:
+      ansible_ssh_pass: '{{ ceph_pwd }}'
+  vars_files:
+    - "./data/var.yml"
+  roles:
+    - { name: ceph_pre_deployment }
+
+- name: "Excecuting Pre-Validation for ceph-ansible node and installing ceph"
+  hosts: 
+    - ansible-ceph
+  gather_facts: false
+  remote_user: root
+  vars:
+      ansible_ssh_pass: '{{ ceph_pwd }}'
+  vars_files:
+    - "./data/var.yml"
+  roles:
+    - { name: ceph_ansible_deployment }
+
+- name: "Post Validation check/commands for all the ceph nodes"
+  hosts: mons[0]
+  gather_facts: false
+  remote_user: root
+  vars:
+      ansible_ssh_pass: '{{ ceph_pwd }}'
+  vars_files:
+    - "./data/var.yml"
+  roles:
+    - { name: ceph_post_deployment }

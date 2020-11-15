@@ -1,0 +1,19 @@
+ - name: "check for interfaces"
+   block:
+     - name: "Checking for Active interface" 
+       shell: ethtool {{ item.iname }} | grep Link | awk -F":" '{print$2}' | sed 's/ //g'
+       register: active_check
+
+     - name: "Fail if interface is not active"
+       fail:
+         msg: " Interface {{ item.iname }} is not active. Hence , Aborting."
+       when: active_check.stdout != 'yes'
+
+     - name: "Checking for interface speed"
+       shell: ethtool {{ item.iname }} | grep Speed | awk -F":" '{print$2}' | sed 's/ //g' | sed 's/Mb\/s//g'
+       register: speed_check
+
+     - name: "Fail if interface speed is not as per requirement"
+       fail:
+         msg: " Interface {{ item.iname }} speed is Not same with the requirement. Hence , Aborting."
+       when: speed_check.stdout > item.speed.split('Mb')[0] 

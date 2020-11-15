@@ -1,0 +1,14 @@
+- name: "Enable log Files in Ceph"
+  block:
+    - name: "collecting quorum numbers to enable logs"
+      shell: podman exec -it {{ mon_out.stdout }} ceph {{ item }} stat | awk '{print $13}' | tr "," "\n"
+      register: result
+   
+    - name: "Enabling logs"
+      command: podman exec -it {{ mon_out.stdout }} ceph config set {{ item }}.{{ line_item }} log_to_file true
+      with_items:
+        - "{{ result.stdout_lines }}"
+      loop_control:
+        loop_var: line_item
+  ignore_errors: true
+

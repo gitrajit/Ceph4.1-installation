@@ -1,0 +1,14 @@
+---
+# tasks file for ceph_deployment
+ - include: interfaces.yml
+   with_items:
+     - "{{ interfaces }}"
+ - include: filesystem.yml
+   with_items:
+     - "{{ filesystem }}"
+ - include: common_check.yml
+ - include: network_interfaces.yml
+   with_items:
+      - "{{ networkBond }}"
+
+# - include: abc.yml

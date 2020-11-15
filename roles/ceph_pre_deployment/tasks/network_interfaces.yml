@@ -1,0 +1,32 @@
+- name: "Checking for bond configuration"
+  #shell: ifconfig | grep -i '{{ item.bondname }}:' | awk -F":" '{print$1}'
+  shell: ip a show '{{ item.bondname }}' | grep '{{ item.bondname }}' | awk -F":" '{print$2}' | sed 's/ //g'
+  register: bond_check
+- fail: 
+    msg: "Bond {{ item.bondname }} is not configure. Hence, Aborting."
+  when: bond_check.stdout != item.bondname
+
+- name: "Checking interface for bond {{ item.bondname }}"
+  shell: cat /proc/net/bonding/{{ item.bondname }} |grep Interface | awk -F":" '{print$2}' | sed 's/ //g'
+  register: bond_check
+  
+- fail: 
+    msg: "Interface {{ line_item }} is not present. Hence, Aborting."
+  when: line_item not in bond_check.stdout_lines
+  with_items:
+    - "{{ item.bondif }}"
+  loop_control:
+    loop_var: line_item
+
+#- debug: var=item
+#  with_items:
+#    - "{{ item.bondif }}"
+
+- name: "Checking MTU for bond {{ item.bondname }}"
+  shell: ip addr show dev {{ item.bondname}} |grep mtu | awk '{print$5}'
+  register: mtu_check
+  
+- fail:
+    msg: "MTU value for {{ item.bondname }} is {{ mtu_check.stdout }}, Not as per requirement({{ item.bondmtu}}). Hence , Aborting."
+  when: mtu_check.stdout|int != item.bondmtu
+#- debug: var=mtu_check.stdout|int

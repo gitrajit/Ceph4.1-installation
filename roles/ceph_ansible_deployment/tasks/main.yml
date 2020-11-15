@@ -1,0 +1,37 @@
+---
+# tasks file for Ansible_preparation
+- include: ansible_local_action.yml
+
+- name: "Creating required ceph yml files"
+  block:
+  - name: "Creating osds yml file"
+    template:
+      src: osds_yml.j2
+      dest: /tmp/osds.yml
+      #dest: /usr/share/ceph-ansible/group_vars/osds.yml
+      force: yes
+
+  - name: "Creating all yml file"
+    template:
+      src: all_yml.j2
+      dest: /tmp/all.yml
+      #dest: /usr/share/ceph-ansible/group_vars/all.yml
+      force: yes
+
+#- name: "Preparing install yml file"
+#  command: mv /usr/share/ceph-ansible/site-container.yml.sample /usr/share/ceph-ansible/site-container.yml
+
+#- name: "copying hosts file to ceph-ansible directory"
+#  copy:
+#    src: ./cephinventory/hosts
+#    dest: /etc/ansible/hosts
+
+#- name: "Removing ceph-ansible host from the inventry"
+#  lineinfile: 
+#    path: /etc/ansible/hosts
+#    regexp: '{{ ansible[0] }}'
+#    line: '#{{ ansible[0] }}'
+
+#- name: "Installing ceph"
+#  shell: cd /usr/share/ceph-ansible && ansible-playbook /usr/share/ceph-ansible/site-docker.yml
+#  shell: cd /usr/share/ceph-ansible && ansible-playbook site-container.yml 

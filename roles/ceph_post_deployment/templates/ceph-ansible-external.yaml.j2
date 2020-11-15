@@ -1,0 +1,28 @@
+resource_registry:
+  OS::TripleO::Services::CephExternal: /home/stack/templates/openstack-tripleo-heat-templates/docker/services/ceph-ansible/ceph-external.yaml
+
+parameter_defaults:
+  #NOTE: These example parameters are required when using CephExternal
+  CephClusterFSID: '{{ fsid.stdout }}'
+  CephClientKey: '{{ cephkey.stdout }}'
+  CephExternalMonHost: '{{ monhost.stdout }}'
+  # the following parameters enable Ceph backends for Cinder, Glance, Gnocchi and Nova
+  NovaEnableRbdBackend: true
+  CinderEnableRbdBackend: true
+  #CinderBackupBackend: ceph
+  GlanceBackend: rbd
+  #GnocchiBackend: rbd
+  # If the Ceph pools which host VMs, Volumes and Images do not match these
+  # names OR the client keyring to use is not named 'openstack',  edit the
+  # following as needed.
+  NovaRbdPoolName: vms
+  CinderRbdPoolName: volumes
+  CinderBackupRbdPoolName: backups
+  GlanceRbdPoolName: images
+  #GnocchiRbdPoolName: metrics
+  CephClientUserName: openstack
+  # finally we disable the Cinder LVM backend
+  CinderEnableIscsiBackend: false
+  CephAnsibleExtraConfig:
+    dashboard_enabled: False
+  

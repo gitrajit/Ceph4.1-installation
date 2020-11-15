@@ -1,0 +1,13 @@
+---
+dummy:
+
+
+devices:
+{% for device in filesystem %}
+  - /dev/{{ device.fname }}
+{% endfor %}
+
+{% for valu in osds_yml %}
+{{valu}}: {{osds_yml[valu]}}
+{% endfor %}
+

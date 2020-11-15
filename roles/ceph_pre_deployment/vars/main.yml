@@ -1,0 +1,5 @@
+---
+# vars file for ceph_deployment
+ansibleversion: "2.9.0"
+pythonversion: '2.7.5'
+cephansibleversion: '4.0.0'

@@ -1,0 +1,48 @@
+---
+# tasks file for ceph_post_deployment
+
+- name: Capturing the mon container name
+  shell: podman ps -f name=mon | awk '{print$NF}' | grep -v NAME
+  #shell: podman ps -qf "name=mon"
+  register: mon_out
+
+- name: "Block Pool Creation"
+  command: "podman exec -it {{ mon_out.stdout }} ceph osd pool create {{ item.poolname }} {{ item.PG_count }}"
+  with_items:
+    - "{{ pools }}"
+
+- name: "Creating Block pool MAX size"
+  command: "podman exec -it {{ mon_out.stdout }} ceph osd pool set {{ item.poolname }} size 2"
+  with_items:
+    - "{{ pools }}"
+
+- name: "Creating Block pool MIN size"
+  command: "podman exec -it {{ mon_out.stdout }} ceph osd pool set {{ item.poolname }} min_size 1"
+  with_items:
+    - "{{ pools }}"
+
+
+- name: "Set the Authentication in Monitor"
+  command: "podman exec -it {{ mon_out.stdout}} {{ item }}"
+  with_items:
+    - "{{ authinmonitor }}"
+  ignore_errors: yes
+
+
+
+#Enable this is FS creation is required
+#- name: "Ceph FS Creation"
+#  command: "docker exec -it ceph-mon-ceph1 {{ item }}"
+#  with_items:
+#    - "{{ fscreation }}"
+
+- include_tasks: create_ceph_config.yml
+
+#This need to be executed only on 4 and later vesion of ceph
+- include_tasks: ceph_logfile.yml
+  with_items:
+    - mon
+    - mgr
+    - osd
+    - mds
+

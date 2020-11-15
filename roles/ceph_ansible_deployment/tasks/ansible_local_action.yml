@@ -1,0 +1,81 @@
+
+- name: "Checking Ansible is present or not"
+  shell: rpm -qa ansible | awk -F"-" '{print $1}'
+  register: ansible_out
+
+- block:
+    - name: Installing Ansible
+      package:
+        name: ansible
+        state: present
+   
+  when: ansible_out.stdout != "ansible" 
+
+- name: "Checking Ansible version"
+  shell: ansible --version | grep "^ansible" | awk '{print$2}'
+  register: ansible_check
+
+
+- fail:
+    msg: "Ansible version should be >= {{ ansibleversion }} . Hence , Aborting."
+  when: ansible_check.stdout is version (ansibleversion, operator='lt', strict=True)
+  #ignore_errors: yes
+
+- name: "Checking Python version"
+  shell: python2 -c "print(__import__('sys').version)" | head -1 | awk '{print$1}'
+  register: python_check
+
+#- debug:
+#    msg: python version is {{ python_check }}
+
+- name: Installing Python packages
+  package:
+    name: python2
+    state: latest
+  when: python_check.stdout is version (pythonversion, operator='lt', strict=True)
+
+#- name: "Checking for ceph-ansible rpm"
+#  shell: rpm -q ceph-ansible | grep "^ceph" | awk -F"-" '{print$1"-"$2}'
+#  register: ceph_check
+
+#- debug: var=ceph_check
+#- name: "Installing cep-ansible rpm"
+#  package:
+#    name: ceph-ansible
+#    state: latest
+#  when: ceph_check.stdout != 'ceph-ansible' and ceph_check is defined
+#  ignore_errors: yes
+
+#- name: "Checking for ceph-ansible rpm version"
+#  shell: rpm -q ceph-ansible | awk -F"-" '{print$3}'
+#  register: ceph_checkv
+#  when: ceph_check is defined
+
+#- fail:
+#    msg: "Either ceph_ansible is not present or version is less than 4.0. Hence , Aborting."
+#  when: ceph_check.stdout == "" or (ceph_checkv.stdout is version (cephansibleversion, operator='lt', strict=True) and ceph_check is defined)
+#  ignore_errors: yes
+
+- name: "Checking for python3-netaddr rpm"
+  shell: rpm -q python3-netaddr | grep "^python3" | awk -F"-" '{print$1"-"$2}'
+  register: python3_netaddr_check
+
+- name: "Installing python3-netaddr rpm"
+  package:
+    name: python3-netaddr
+    state: latest
+  when: python3_netaddr_check.stdout != 'python3-netaddr' and python3_netaddr_check is defined
+  ignore_errors: yes
+
+#- name: "Creating directory for ceph-ansible"
+#  command: mkdir -p /usr/share/ceph-ansible
+#  ignore_errors: yes
+
+#- name: "Git clone ceph-ansible"
+#  git:
+#    repo: "https://github.com/ceph/ceph-ansible.git"
+#    dest: "/tmp/share"
+    #dest: "/usr/share/ceph-ansible"
+
+
+

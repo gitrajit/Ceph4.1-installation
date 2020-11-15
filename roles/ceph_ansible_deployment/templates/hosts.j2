@@ -1,0 +1,15 @@
+localhost ansible_connection=local
+[osds]
+{% for host in osds %}
+{{ host }}
+{% endfor %}
+
+[mons]
+{% for host in mons %}
+{{ host }}
+{% endfor %}
+
+[mgrs]
+{% for host in mgrs %}
+{{ host }}
+{% endfor %}

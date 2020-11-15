@@ -1,0 +1,28 @@
+---
+# vars file for ceph_post_deployment
+
+poolcreation:
+- ceph osd pool create volumes 128
+- ceph osd pool create images 128
+- ceph osd pool create vms 128
+- ceph osd pool set volumes size 2
+- ceph osd pool set volumes min_size 1
+- ceph osd pool set images size 2
+- ceph osd pool set images min_size 1
+- ceph osd pool set vms size 2
+- ceph osd pool set vms min_size 1
+
+authinmonitor:
+- ceph auth get-or-create client.cinder mon 'allow r' osd 'allow class-read object_prefix rbd_children,allow rwx pool=volumes, allow rwx pool=vms, allow rx pool=images'
+- ceph auth get-or-create client.glance mon 'allow r' osd 'allow class-read object_prefix rbd_children,allow rwx pool=images'
+- ceph auth add client.openstack mgr 'allow *' mon 'profile rbd' osd 'profile rbd pool=volumes, profile rbd pool=vms, profile rbd pool=images, profile rbd pool=backups, profile rbd pool=metrics'
+
+fscreation:
+- ceph osd pool create cephfs_data 128
+- ceph osd pool create cephfs_metadata 128
+- ceph fs new fs_name cephfs_metadata cephfs_data
+- ceph osd pool set cephfs_data size 2
+- ceph osd pool set cephfs_data min_size 1
+- ceph osd pool set cephfs_metadata size 2
+- ceph osd pool set cephfs_metadata min_size 1
+

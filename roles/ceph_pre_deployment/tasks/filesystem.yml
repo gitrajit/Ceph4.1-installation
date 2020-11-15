@@ -1,0 +1,27 @@
+ - name: "checking devices filesystem"
+   block:
+     - name: "Checking filesystem name"
+       shell : lsblk | grep -w {{ item.fname }}  | awk '{print$1}'
+       register: fs_check
+     - name: "Fail if devices are not present"
+       fail:
+         msg: "File system /dev/{{ item.fname }} not found. Hence, Aborting."
+       when: fs_check.stdout != item.fname
+
+     - name: "Checking filesystem size"
+       shell : lsblk | grep -w {{ item.fname }}  | awk '{print$4}'
+       register: size_check
+
+     - name: "Fail if size is not per requirement"
+       fail:
+         msg: "File system {{ item.size }} has size {{ size_check.stdout }} ,Not as per requirement. Hence, Aborting."
+       when: size_check.stdout != item.size
+
+     - name: "Checking filesystem class"
+       shell : lsblk -d | grep -w {{ item.fname }} | awk '{print$5}'
+       register: size_class
+     - name: "Fail if class not per requirement(0 for SSD and 1 for HHD)"
+       fail:
+         msg: "File system {{ item.fname }} has class {{ size_class.stdout }},Not as per requirement. Hence, Aborting."
+       when: size_class.stdout|int != item.class
+
